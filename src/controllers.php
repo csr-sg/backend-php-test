@@ -21,13 +21,24 @@ $app->match('/login', function (Request $request) use ($app) {
     $username = $request->get('username');
     $password = $request->get('password');
 
-    if ($username) {
-        $sql = 'SELECT * FROM users WHERE username = ? and password = ?';
-        $user = $app['db']->fetchAssoc($sql, array($username, $password));
+    // Make sure they entered a username and password
+    if ($username && $password) {
 
-        if ($user){
-            $app['session']->set('user', $user);
-            return $app->redirect('/todo');
+        // First check if the user exists in the database
+        $sql = 'SELECT * FROM users WHERE username = ?';
+        $user = $app['db']->fetchAssoc($sql, array($username));
+
+        // If the user was found
+        if ($user) {
+
+            // Hash the password using Argon2i then check against the DB hash using a constant time verification
+            $password_is_verified = password_verify($password, $user['password_hash']);
+
+            // If correct, let them log in and see the todos
+            if ($password_is_verified) {
+                $app['session']->set('user', $user);
+                return $app->redirect('/todo');
+            }
         }
     }
 
@@ -46,7 +57,7 @@ $app->get('/todo/{id}', function ($id) use ($app) {
         return $app->redirect('/login');
     }
 
-    if ($id){
+    if ($id) {
         $sql = 'SELECT * FROM todos WHERE id = ?';
         $todo = $app['db']->fetchAssoc($sql, array((int) $id));
 
@@ -55,7 +66,7 @@ $app->get('/todo/{id}', function ($id) use ($app) {
         ]);
     } else {
         $sql = 'SELECT * FROM todos WHERE user_id = ?';
-        $todos = $app['db']->fetchAll($sql, array($user['id']));
+        $todos = $app['db']->fetchAll($sql, array((int) $user['id']));
 
         return $app['twig']->render('todos.html', [
             'todos' => $todos,
