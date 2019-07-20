@@ -22,8 +22,8 @@ $app->match('/login', function (Request $request) use ($app) {
     $password = $request->get('password');
 
     if ($username) {
-        $sql = "SELECT * FROM users WHERE username = '$username' and password = '$password'";
-        $user = $app['db']->fetchAssoc($sql);
+        $sql = 'SELECT * FROM users WHERE username = ? and password = ?';
+        $user = $app['db']->fetchAssoc($sql, array($username, $password));
 
         if ($user){
             $app['session']->set('user', $user);
@@ -47,15 +47,15 @@ $app->get('/todo/{id}', function ($id) use ($app) {
     }
 
     if ($id){
-        $sql = "SELECT * FROM todos WHERE id = '$id'";
-        $todo = $app['db']->fetchAssoc($sql);
+        $sql = 'SELECT * FROM todos WHERE id = ?';
+        $todo = $app['db']->fetchAssoc($sql, array((int) $id));
 
         return $app['twig']->render('todo.html', [
             'todo' => $todo,
         ]);
     } else {
-        $sql = "SELECT * FROM todos WHERE user_id = '${user['id']}'";
-        $todos = $app['db']->fetchAll($sql);
+        $sql = 'SELECT * FROM todos WHERE user_id = ?';
+        $todos = $app['db']->fetchAll($sql, array($user['id']));
 
         return $app['twig']->render('todos.html', [
             'todos' => $todos,
@@ -73,8 +73,8 @@ $app->post('/todo/add', function (Request $request) use ($app) {
     $user_id = $user['id'];
     $description = $request->get('description');
 
-    $sql = "INSERT INTO todos (user_id, description) VALUES ('$user_id', '$description')";
-    $app['db']->executeUpdate($sql);
+    $sql = 'INSERT INTO todos (user_id, description) VALUES (?, ?)';
+    $app['db']->executeUpdate($sql, array((int) $user_id, $description));
 
     return $app->redirect('/todo');
 });
@@ -82,8 +82,8 @@ $app->post('/todo/add', function (Request $request) use ($app) {
 
 $app->match('/todo/delete/{id}', function ($id) use ($app) {
 
-    $sql = "DELETE FROM todos WHERE id = '$id'";
-    $app['db']->executeUpdate($sql);
+    $sql = 'DELETE FROM todos WHERE id = ?';
+    $app['db']->executeUpdate($sql, array((int) $id));
 
     return $app->redirect('/todo');
 });
