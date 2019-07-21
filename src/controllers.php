@@ -84,9 +84,13 @@ $app->post('/todo/add', function (Request $request) use ($app) {
     $user_id = $user['id'];
     $description = $request->get('description');
 
-    $sql = 'INSERT INTO todos (user_id, description) VALUES (?, ?)';
-    $app['db']->executeUpdate($sql, array((int) $user_id, $description));
+    // Make sure the user added a description before adding
+    if ($description) {
+        $sql = 'INSERT INTO todos (user_id, description) VALUES (?, ?)';
+        $app['db']->executeUpdate($sql, array((int) $user_id, $description));
+    }
 
+    // Otherwise return (ToDo: show error message in UI)
     return $app->redirect('/todo');
 });
 
