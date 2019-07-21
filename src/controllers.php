@@ -95,7 +95,25 @@ $app->post('/todo/add', function (Request $request) use ($app) {
 });
 
 
+// Mark a todo item as complete
+$app->match('/todo/complete/{id}', function ($id) use ($app) {
+    if (null === $user = $app['session']->get('user')) {
+        return $app->redirect('/login');
+    }
+
+    $sql = 'UPDATE todos SET completed = ? WHERE id = ?';
+    $app['db']->executeUpdate($sql, array(1, (int) $id));
+
+    return $app->redirect('/todo');
+});
+
+
 $app->match('/todo/delete/{id}', function ($id) use ($app) {
+    
+    // Don't allow deleting todos if not logged in
+    if (null === $user = $app['session']->get('user')) {
+        return $app->redirect('/login');
+    }
 
     $sql = 'DELETE FROM todos WHERE id = ?';
     $app['db']->executeUpdate($sql, array((int) $id));
